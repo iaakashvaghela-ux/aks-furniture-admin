@@ -6,6 +6,8 @@ import { RxCross2 } from "react-icons/rx";
 import { Link } from "react-router-dom";
 import { useAdmin } from "../../../../admin context/AdminContext";
 import Swal from "sweetalert2";
+import ImagePreview from "../../../common/ImagePreview";
+
 
 export default function Viewsubcategory() {
   let baseUrl = import.meta.env.VITE_API_URL

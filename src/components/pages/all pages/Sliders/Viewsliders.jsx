@@ -6,7 +6,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useAdmin } from "../../../../admin context/AdminContext";
 import Swal from "sweetalert2";
 import { Link, useNavigate } from "react-router-dom";
-import ImagePreview from "../../../common/imagePreview";
+import ImagePreview from "../../../common/ImagePreview";
 
 
 export default function Viewsliders() {
