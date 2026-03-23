@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+
+@theme {
+  --color-primary: #2563eb;
+  --radius: 0.5rem;
+  --max-width-container: 1220px;
+}
+
+
+.input {
+  @apply border-2 border-gray-300 rounded-lg w-full py-2.5 px-3 focus:ring-purple-500 focus:border-purple-500;
+}
