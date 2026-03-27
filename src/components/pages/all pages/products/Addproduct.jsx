@@ -1,15 +1,3 @@
-// import React from 'react'
-
-// export default function Addproduct() {
-//   return (
-//     <div>
-//       Add Product
-//     </div>
-//   )
-// }
-
-
-
 import { useState } from "react";
 import { FaCloudUploadAlt } from "react-icons/fa";
 
@@ -17,13 +5,13 @@ export default function Addproduct() {
   const [images, setImages] = useState({
     productImage: null,
     backImage: null,
-    galleryImage: null,
+    galleryImage: [],
   });
 
   const [previews, setPreviews] = useState({
     productImage: null,
     backImage: null,
-    galleryImage: null,
+    galleryImage: [],
   });
 
   const [formData, setFormData] = useState({
@@ -47,15 +35,44 @@ export default function Addproduct() {
   /* ---------- handlers ---------- */
 
   const handleImageChange = (e) => {
-    const { name, files } = e.target;
-    const file = files[0];
-    if (!file) return;
+    const { name, files, multiple } = e.target;
+    if (multiple) {
+      const fileArray = Array.from(files);
+      const previewArray = fileArray.map((file) => URL.createObjectURL(file));
 
-    setImages((prev) => ({ ...prev, [name]: file }));
-    setPreviews((prev) => ({
+      setImages((prev) => ({
+        ...prev,
+        [name]: [...prev[name], ...fileArray],
+      }));
+      setPreviews((prev) => ({
+        ...prev,
+        [name]: [...prev[name], ...previewArray],
+      }));
+    } else {
+      const file = files[0];
+      if (!file) return;
+
+      setImages((prev) => ({ ...prev, [name]: file }));
+      setPreviews((prev) => ({
+        ...prev,
+        [name]: URL.createObjectURL(file),
+      }));
+    }
+  };
+
+  const removeImage = (name, index) => {
+    setImages((prev) => ({
       ...prev,
-      [name]: URL.createObjectURL(file),
+      [name]: prev[name].filter((_, i) => i !== index),
     }));
+    setPreviews((prev) => {
+      // Revoke the URL to avoid memory leaks
+      URL.revokeObjectURL(prev[name][index]);
+      return {
+        ...prev,
+        [name]: prev[name].filter((_, i) => i !== index),
+      };
+    });
   };
 
   const handleChange = (e) => {
@@ -70,36 +87,89 @@ export default function Addproduct() {
   };
 
   /* ---------- reusable image box ---------- */
-  const ImageBox = ({ label, name, preview }) => (
-    <div className="mb-4 h-[200px]">
+  const ImageBox = ({ label, name, preview, multiple = false }) => (
+    <div className={`mb-4 ${multiple ? "min-h-[200px]" : "h-[200px]"}`}>
       <label className="block text-md font-medium text-[#76838f]">
         {label}
       </label>
 
-      <label
-        htmlFor={name}
-        className="h-[160px] border border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer text-gray-400"
+      <div
+        className={`${
+          multiple ? "min-h-[160px] py-4" : "h-[160px]"
+        } border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 relative`}
       >
-        {preview ? (
-          <img
-            src={preview}
-            alt="preview"
-            className="h-full w-full object-cover rounded-md"
-          />
+        {preview && (multiple ? preview.length > 0 : preview) ? (
+          multiple && Array.isArray(preview) ? (
+            <div className="grid grid-cols-3 gap-3 p-3 w-full">
+              {preview.map((src, index) => (
+                <div key={index} className="relative group aspect-square">
+                  <img
+                    src={src}
+                    alt={`preview-${index}`}
+                    className="h-full w-full object-cover rounded-lg shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(name, index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3 w-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              <label
+                htmlFor={name}
+                className="aspect-square w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-white/50 text-gray-400 cursor-pointer hover:border-blue-500 transition-colors"
+              >
+                <FaCloudUploadAlt size={20} />
+                <p className="text-[10px] mt-1 font-medium text-center px-1">
+                  Add More
+                </p>
+              </label>
+            </div>
+          ) : (
+            <label htmlFor={name} className="w-full h-full cursor-pointer">
+              <img
+                src={preview}
+                alt="preview"
+                className="h-full w-full object-cover rounded-lg"
+              />
+            </label>
+          )
         ) : (
-          <>
-            <FaCloudUploadAlt size={32} />
-            <p className="text-sm mt-1">Click or drag</p>
-          </>
+          <label
+            htmlFor={name}
+            className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
+          >
+            <FaCloudUploadAlt size={32} className="text-gray-300" />
+            <p className="text-sm mt-2 font-medium">Click to upload</p>
+            <p className="text-xs mt-1 text-gray-400">
+              {multiple ? "Select multiple images" : "Select one image"}
+            </p>
+          </label>
         )}
-      </label>
+      </div>
 
       <input
         type="file"
         id={name}
         name={name}
-        className="hidden "
+        className="hidden"
         accept="image/*"
+        multiple={multiple}
         onChange={handleImageChange}
       />
     </div>
@@ -126,6 +196,7 @@ export default function Addproduct() {
               label="Gallery Image"
               name="galleryImage"
               preview={previews.galleryImage}
+              multiple={true}
             />
 
           </div>

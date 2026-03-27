@@ -93,7 +93,7 @@ export default function Addsubcategory() {
             {/* Image Upload */}
             <div>
               <label className="block font-medium mb-2">
-                Category Image
+                Sub Category Image
               </label>
 
               <label className="cursor-pointer">

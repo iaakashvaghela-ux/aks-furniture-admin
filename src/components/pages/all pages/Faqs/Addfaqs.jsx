@@ -1,18 +1,35 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAdmin } from "../../../../admin context/AdminContext";
 import axios from "axios";
 
 export default function Addfaqs() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  let baseUrl = import.meta.env.VITE_API_URL
+  const { successToast, errorToast } = useAdmin()
+
   const [formData, setFormData] = useState({
     question: "",
     answer: "",
     order: "",
   });
 
-  const navigate = useNavigate();
-  let baseUrl = import.meta.env.VITE_API_URL
-  const { successToast, errorToast } = useAdmin()
+  useEffect(() => {
+    if (id) {
+      axios.get(`${baseUrl}faq/single/${id}`)
+        .then((res) => {
+          if (res.data._status) {
+            setFormData({
+              question: res.data._data.question,
+              answer: res.data._data.answer,
+              order: res.data._data.order,
+            })
+          }
+        })
+        .catch((err) => console.log(err))
+    }
+  }, [id, baseUrl])
   
  const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,7 +41,9 @@ export default function Addfaqs() {
 
   let handleSubmit = (e) => {
     e.preventDefault();
-    axios.post(`${baseUrl}faq/add`, formData)
+    let addOrUpdate = id ? `update/${id}` : 'add'
+    let getOrPost = id ? 'put' : 'post'
+    axios[getOrPost](`${baseUrl}faq/${addOrUpdate}`, formData)
       .then((res) => {
         if (res.data._status) {
           successToast(res.data._message)
@@ -43,7 +62,9 @@ export default function Addfaqs() {
 
   return (
     <div className="w-[95%] mx-auto mt-5 mb-40">
-      <h3 className="text-[26px] font-semibold bg-slate-100 py-3 px-4 rounded-t-md border border-slate-400">Add Faq</h3>
+      <h3 className="text-[26px] font-semibold bg-slate-100 py-3 px-4 rounded-t-md border border-slate-400">
+        {id ? "Update Faq" : "Add Faq"}
+      </h3>
       <form
         autoComplete="off"
         onSubmit={handleSubmit}
@@ -111,7 +132,7 @@ export default function Addfaqs() {
           type="submit"
           className="my-5 text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5"
         >
-          Add Faq
+          {id ? "Update Faq" : "Add Faq"}
         </button>
       </form>
 

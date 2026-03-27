@@ -37,6 +37,7 @@ export default function Viewsliders() {
           setPath(res.data.path)
         }
       })
+      .catch(err => console.log(err))
   }
 
 
@@ -73,39 +74,41 @@ export default function Viewsliders() {
 
 
   let handleDelete = () => {
-
     if (checked.length === 0) {
       return errorToast("Please select at least one item")
     }
 
-    axios.post(`${baseUrl}slider/delete`, { ids: checked })
-      .then(res => {
-        if (res.data._status) {
-          Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-          }).then((result) => {
-            if (result.isConfirmed) {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.post(`${baseUrl}slider/delete`, { ids: checked })
+          .then(res => {
+            if (res.data._status) {
               getSliderData()
               setChecked([])
               successToast(res.data._message)
               Swal.fire({
                 title: "Deleted!",
-                text: "Your file has been deleted.",
+                text: "Your slider has been deleted.",
                 icon: "success"
               });
+            } else {
+              errorToast(res.data._message)
             }
-          });
-        }
-        else {
-          errorToast(res.data._message)
-        }
-      })
+          })
+          .catch(err => {
+            console.log(err)
+            errorToast("Internal Server Error")
+          })
+      }
+    });
   }
 
 
@@ -113,34 +116,38 @@ export default function Viewsliders() {
     if (checked.length === 0) {
       return errorToast("Please select at least one item")
     }
-    axios.post(`${baseUrl}slider/change-status`, { ids: checked })
-      .then(res => {
-        if (res.data._status) {
-          Swal.fire({
-            title: "Are you sure?",
-            text: "",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, change status!"
-          }).then((result) => {
-            if (result.isConfirmed) {
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You want to change status!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, change status!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.post(`${baseUrl}slider/change-status`, { ids: checked })
+          .then(res => {
+            if (res.data._status) {
               getSliderData()
               setChecked([])
               successToast(res.data._message)
               Swal.fire({
-                title: "status changed!",
-                text: "Your file has been changed.",
+                title: "Status Changed!",
+                text: "Status has been changed.",
                 icon: "success"
               });
+            } else {
+              errorToast(res.data._message)
             }
-          });
-        }
-        else {
-          errorToast(res.data._message)
-        }
-      })
+          })
+          .catch(err => {
+            console.log(err)
+            errorToast("Internal Server Error")
+          })
+      }
+    });
   }
 
 
@@ -169,7 +176,7 @@ export default function Viewsliders() {
 
           {/* Header */}
           <div className="flex justify-between items-center p-4 bg-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">View Material</h2>
+            <h2 className="text-xl font-semibold text-gray-800">View Sliders</h2>
 
             <div className="flex gap-3">
               {/* FILTER TOGGLE BUTTON */}
@@ -197,7 +204,7 @@ export default function Viewsliders() {
                   sliderData.length > 0 &&
                   checked.length === sliderData.length
                 } type="checkbox" /></th>
-                <th className="p-4  w-[816px]">Material Name</th>
+                 <th className="p-4  w-[816px]">Slider Title</th>
                 <th className="p-4">IMAGE</th>
                 <th className="p-4">ORDER</th>
                 <th className="p-4">STATUS</th>

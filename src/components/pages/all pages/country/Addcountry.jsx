@@ -1,18 +1,34 @@
 import axios from "axios";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAdmin } from "../../../../admin context/AdminContext";
 
 export default function Addcountry() {
+  const { id } = useParams();
   const [name, setName] = useState("");
   const [order, setOrder] = useState("");
   const navigate = useNavigate();
   let baseUrl = import.meta.env.VITE_API_URL
   const { successToast, errorToast } = useAdmin()
+
+  useEffect(() => {
+    if (id) {
+      axios.get(`${baseUrl}country/single/${id}`)
+        .then((res) => {
+          if (res.data._status) {
+            setName(res.data._data.name)
+            setOrder(res.data._data.order)
+          }
+        })
+        .catch((err) => console.log(err))
+    }
+  }, [id, baseUrl])
   let handleSubmit = (e) => {
     e.preventDefault();
     let obj = { name, order }
-    axios.post(`${baseUrl}country/add`, obj)
+    let addOrUpdate = id ? `update/${id}` : 'add'
+    let getOrPost = id ? 'put' : 'post'
+    axios[getOrPost](`${baseUrl}country/${addOrUpdate}`, obj)
       .then((res) => {
         if (res.data._status) {
           successToast(res.data._message)
@@ -33,7 +49,7 @@ export default function Addcountry() {
 
       {/* Header */}
       <div className="px-6 py-4 border-b bg-slate-50 rounded-t-lg">
-        <h2 className="text-xl font-semibold">Add Country</h2>
+        <h2 className="text-xl font-semibold">{id ? "Update" : "Add"} Country</h2>
       </div>
 
       {/* Body */}
@@ -70,7 +86,7 @@ export default function Addcountry() {
 
           {/* Button */}
           <button type="submit" className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 transition">
-            Add Country
+            {id ? "Update" : "Add"} Country
           </button>
         </div>
       </form>

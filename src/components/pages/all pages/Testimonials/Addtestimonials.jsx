@@ -1,44 +1,81 @@
-// import React from 'react'
-
-// export default function Addtestimonials() {
-//   return (
-//     <div>
-//       Addtestimonials
-//     </div>
-//   )
-// }
-
-
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaCloudUploadAlt } from "react-icons/fa";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAdmin } from "../../../../admin context/AdminContext";
+import axios from "axios";
 
 export default function Addtestimonials() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { successToast, errorToast } = useAdmin();
+  const baseUrl = import.meta.env.VITE_API_URL;
+
   const [imagePreview, setImagePreview] = useState(null);
+  const [oldImage, setOldImage] = useState("");
+  const [path, setPath] = useState("");
 
   const [formData, setFormData] = useState({
-    Image: null,
-    Name: "",
-    Designation: "",
-    Rating: "",
-    Order: "",
-    Message: "",
+    name: "",
+    designation: "",
+    rating: "",
+    order: "",
+    message: "",
   });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
-    if (name === "Image") {
-      setFormData({ ...formData, Image: files[0] });
-      setImagePreview(URL.createObjectURL(files[0]))
+    if (name === "image") {
+      const file = files[0];
+      if (file) {
+        setImagePreview(URL.createObjectURL(file));
+      }
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
+  useEffect(() => {
+    if (id) {
+      axios.get(`${baseUrl}testimonials/single/${id}`)
+        .then((res) => {
+          if (res.data._status) {
+            const data = res.data._data;
+            setFormData({
+              name: data.name,
+              designation: data.designation,
+              rating: data.rating,
+              order: data.order,
+              message: data.message,
+            });
+            setOldImage(data.image);
+            setPath(res.data.path);
+          }
+        })
+        .catch((err) => console.log(err));
+    }
+  }, [id, baseUrl]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form Data 👉", formData);
+    const myData = new FormData(e.target);
+    const endpoint = id ? `testimonials/update/${id}` : "testimonials/add";
+    const method = id ? "put" : "post";
+
+    axios[method](`${baseUrl}${endpoint}`, myData)
+      .then((res) => {
+        if (res.data._status) {
+          successToast(res.data._message);
+          setTimeout(() => {
+            navigate("/testimonials/view");
+          }, 2000);
+        } else {
+          errorToast(res.data._message);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        errorToast("Something went wrong!");
+      });
   };
 
   return (
@@ -57,9 +94,9 @@ export default function Addtestimonials() {
               htmlFor="Image"
               className="border border-gray-300 rounded-md h-64 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:border-purple-500"
             >
-              {imagePreview ? (
+              {imagePreview || (id && oldImage) ? (
                 <img
-                  src={imagePreview}
+                  src={imagePreview || (path + oldImage)}
                   alt="preview"
                   className="h-full w-full object-cover rounded-md"
                 />
@@ -75,7 +112,7 @@ export default function Addtestimonials() {
             <input
               type="file"
               id="Image"
-              name="Image"
+              name="image"
               accept="image/*"
               className="hidden"
               onChange={handleChange}
@@ -90,8 +127,8 @@ export default function Addtestimonials() {
               </label>
               <input
                 type="text"
-                name="Name"
-                value={formData.Name}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 className="text-[19px] border-2 shadow-sm border-gray-300 rounded-lg w-full py-2.5 px-3"
                 placeholder="Name"
@@ -103,9 +140,9 @@ export default function Addtestimonials() {
                 Designation
               </label>
               <input
-                type="number"
-                name="Designation"
-                value={formData.Designation}
+                type="text"
+                name="designation"
+                value={formData.designation}
                 onChange={handleChange}
                 className="text-[19px] border-2 shadow-sm border-gray-300 rounded-lg w-full py-2.5 px-3"
                 placeholder="Designation"
@@ -118,8 +155,8 @@ export default function Addtestimonials() {
               </label>
               <input
                 type="number"
-                name="Rating"
-                value={formData.Rating}
+                name="rating"
+                value={formData.rating}
                 onChange={handleChange}
                 className="text-[19px] border-2 shadow-sm border-gray-300 rounded-lg w-full py-2.5 px-3"
                 placeholder="Rating"
@@ -132,8 +169,8 @@ export default function Addtestimonials() {
               </label>
               <input
                 type="number"
-                name="Order"
-                value={formData.Order}
+                name="order"
+                value={formData.order}
                 onChange={handleChange}
                 className="text-[19px] border-2 shadow-sm border-gray-300 rounded-lg w-full py-2.5 px-3"
                 placeholder="Order"
@@ -145,8 +182,8 @@ export default function Addtestimonials() {
                 Message
               </label>
               <textarea
-                name="Message"
-                value={formData.Message}
+                name="message"
+                value={formData.message}
                 onChange={handleChange}
                 className="resize-none h-[100px] border-2 shadow-sm border-gray-300 rounded-lg w-full py-2.5 px-3"
                 placeholder="Message"
@@ -159,7 +196,7 @@ export default function Addtestimonials() {
           type="submit"
           className="my-5 text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5"
         >
-          Add Testimonial
+          {id ? "Update Testimonial" : "Add Testimonial"}
         </button>
       </form>
     </div>

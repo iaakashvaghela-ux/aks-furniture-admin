@@ -1,34 +1,122 @@
-// import React from 'react'
-
-// export default function Viewtestimonials() {
-//   return (
-//     <div>
-//       Viewtestimonials
-//     </div>
-//   )
-// }
-
-
-
-
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaEdit, FaSearch } from "react-icons/fa";
 import { FiFilter } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
+import { useAdmin } from "../../../../admin context/AdminContext";
+import ImagePreview from "../../../common/ImagePreview";
 
 export default function Viewtestimonials() {
   const [showSearch, setShowSearch] = useState(false);
+  const [testimonialsData, setTestimonialsData] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [checked, setChecked] = useState([]);
+  const [path, setPath] = useState("");
+  const { successToast, errorToast } = useAdmin();
+  const baseUrl = import.meta.env.VITE_API_URL;
 
-  const users = [
-    {
-      id: 1,
-      name: "Neil Sims",
-      order: "1",
-      status: "Active",
-    },
+  const getTestimonialsData = () => {
+    axios.get(`${baseUrl}testimonials/view`)
+      .then((res) => {
+        if (res.data._status) {
+          setTestimonialsData(res.data._data);
+          setPath(res.data.path);
+        }
+      })
+      .catch((err) => console.log(err));
+  };
 
-  ];
+  useEffect(() => {
+    getTestimonialsData();
+  }, [baseUrl]);
+
+  const handleCheck = (e) => {
+    const valueChecked = e.target.checked;
+    const value = e.target.value;
+    if (valueChecked) {
+      setChecked([...checked, value]);
+    } else {
+      setChecked(checked.filter((item) => item !== value));
+    }
+  };
+
+  const allCheck = (e) => {
+    if (e.target.checked) {
+      setChecked(testimonialsData.map((item) => item._id));
+    } else {
+      setChecked([]);
+    }
+  };
+
+  const handleDelete = () => {
+    if (checked.length === 0) {
+      return errorToast("Please select at least one item");
+    }
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.post(`${baseUrl}testimonials/delete`, { ids: checked })
+          .then(res => {
+            if (res.data._status) {
+              getTestimonialsData();
+              setChecked([]);
+              successToast(res.data._message);
+              Swal.fire("Deleted!", "Your testimonial has been deleted.", "success");
+            } else {
+              errorToast(res.data._message);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            errorToast("Something went wrong!");
+          });
+      }
+    });
+  };
+
+  const changeStatus = () => {
+    if (checked.length === 0) {
+      return errorToast("Please select at least one item");
+    }
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You want to change status!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, change status!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.post(`${baseUrl}testimonials/change-status`, { ids: checked })
+          .then(res => {
+            if (res.data._status) {
+              getTestimonialsData();
+              setChecked([]);
+              successToast(res.data._message);
+              Swal.fire("Status Changed!", "Status has been updated.", "success");
+            } else {
+              errorToast(res.data._message);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            errorToast("Something went wrong!");
+          });
+      }
+    });
+  };
 
   return (
     <div className="w-full flex justify-center pt-10 pb-50 px-4">
@@ -58,7 +146,7 @@ export default function Viewtestimonials() {
 
           {/* Header */}
           <div className="flex justify-between items-center p-4 bg-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">View Material</h2>
+            <h2 className="text-xl font-semibold text-gray-800">View Testimonials</h2>
 
             <div className="flex gap-3">
               {/* FILTER TOGGLE BUTTON */}
@@ -69,10 +157,10 @@ export default function Viewtestimonials() {
                 {showSearch ? <RxCross2 size={18} /> : <FiFilter size={18} />}
               </button>
 
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg">
+              <button onClick={changeStatus} className="bg-green-600 text-white px-4 py-2 rounded-lg">
                 Change Status
               </button>
-              <button className="bg-red-600 text-white px-4 py-2 rounded-lg">
+              <button onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded-lg">
                 Delete
               </button>
             </div>
@@ -82,8 +170,14 @@ export default function Viewtestimonials() {
           <table className="w-full text-left text-sm text-gray-300">
             <thead className="bg-[#374151] text-gray-400">
               <tr>
-                <th className="p-4"><input type="checkbox" /></th>
-                <th className="p-4  w-[816px]">Material Name</th>
+                <th className="p-4"><input onChange={allCheck} checked={
+                  testimonialsData.length > 0 &&
+                  checked.length === testimonialsData.length
+                } type="checkbox" /></th>
+                <th className="p-4">NAME</th>
+                <th className="p-4">IMAGE</th>
+                <th className="p-4">DESIGNATION</th>
+                <th className="p-4">RATING</th>
                 <th className="p-4">ORDER</th>
                 <th className="p-4">STATUS</th>
                 <th className="p-4">ACTION</th>
@@ -91,43 +185,60 @@ export default function Viewtestimonials() {
             </thead>
 
             <tbody>
-              {users.map((user) => (
+              {testimonialsData.map((user) => (
                 <tr
-                  key={user.id}
+                  key={user._id}
                   className="border-t border-gray-700 hover:bg-[#111827] transition"
                 >
                   <td className="p-4">
                     <form action="">
-                      <input type="checkbox" />
+                      <input 
+                        onChange={handleCheck}
+                        checked={checked.includes(user._id)}
+                        value={user._id} type="checkbox" />
                     </form>
                   </td>
 
                   <td className="p-4 font-medium text-white">
                     {user.name}
                   </td>
-
+                  <td className="p-4">
+                    <img
+                      src={`${path}${user.image}`}
+                      alt={user.name}
+                      className="w-12 h-12 object-cover rounded cursor-pointer"
+                      onClick={() => setPreviewImage(`${path}${user.image}`)}
+                    />
+                  </td>
+                  <td className="p-4">{user.designation}</td>
+                  <td className="p-4">{user.rating}</td>
                   <td className="p-4">{user.order}</td>
 
                   <td className="p-4">
                     <span
-                      className={`px-4 py-1 rounded-full text-white text-xs font-semibold ${user.status === "Active"
-                        ? "bg-green-500"
+                      className={`px-4 py-1 rounded-full text-white text-xs font-semibold ${user.status ? "bg-green-500"
                         : "bg-red-500"
                         }`}
                     >
-                      {user.status}
+                      {user.status ? "Active" : "Deactive"}
                     </span>
                   </td>
 
                   <td className="p-4">
                     <button className="bg-blue-600 p-3 rounded-full text-white">
-                      <FaEdit />
+                      <Link to={`/testimonials/add/${user._id}`}>
+                        <FaEdit />
+                      </Link>
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {previewImage && (
+            <ImagePreview previewImage={previewImage} setPreviewImage={setPreviewImage} />
+          )}
 
         </div>
       </div>

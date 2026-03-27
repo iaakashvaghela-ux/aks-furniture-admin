@@ -94,7 +94,7 @@ createRoot(document.getElementById('root')).render(
             </Route>
 
             <Route path='why-choose-us'>
-              <Route path='add' element={<Addwhychooseus />} />
+              <Route path='add/:id?' element={<Addwhychooseus />} />
               <Route path='view' element={<Viewwhychooseus />} />
             </Route>
 
@@ -107,17 +107,17 @@ createRoot(document.getElementById('root')).render(
             </Route>
 
             <Route path='country'>
-              <Route path='add' element={<Addcountry />} />
+              <Route path='add/:id?' element={<Addcountry />} />
               <Route path='view' element={<Viewcountry />} />
             </Route>
 
             <Route path='testimonials'>
-              <Route path='add' element={<Addtestimonials />} />
+              <Route path='add/:id?' element={<Addtestimonials />} />
               <Route path='view' element={<Viewtestimonials />} />
             </Route>
 
             <Route path='faqs'>
-              <Route path='add' element={<Addfaqs />} />
+              <Route path='add/:id?' element={<Addfaqs />} />
               <Route path='view' element={<Viewfaqs />} />
             </Route>
           </Route>
