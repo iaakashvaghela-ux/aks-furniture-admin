@@ -166,7 +166,6 @@ export default function Addsubsubcategory() {
                   onChange={(e) => {
                     setParentCategory(e.target.value);
                     setSubCategory("");
-
                   }}
                   className="w-full border rounded-md px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >

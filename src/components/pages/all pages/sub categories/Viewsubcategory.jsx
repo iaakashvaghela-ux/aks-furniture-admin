@@ -181,7 +181,7 @@ export default function Viewsubcategory() {
                   subCategoryData.length > 0 &&
                   checked.length === subCategoryData.length
                 } type="checkbox" /></th>
-                <th className="p-4  w-[616px]">Sub Category Name</th>
+                <th className="p-4 ">Sub Category Name</th>
                 <th className="p-4">Parent Category Name</th>
                 <th className="p-4">IMAGE</th>
                 <th className="p-4">ORDER</th>

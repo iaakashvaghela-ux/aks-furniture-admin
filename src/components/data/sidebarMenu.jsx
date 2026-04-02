@@ -27,7 +27,7 @@ const sidebarMenu = [
   },
   {
     name: "Users",
-    path: "/users",
+    path: "/viewuser",
     icon: FaUsers,
     page: <p>
       <NavLink to={"/viewuser"} className='flex items-center gap-2 ms-3 mt-2'>
@@ -52,7 +52,7 @@ const sidebarMenu = [
   },
   {
     name: "Colors",
-    path: "/colors",
+    path: "/color",
     icon: HiOutlineColorSwatch,
     page: <p>
       <NavLink to={"/color/add"} className='flex items-center gap-2 ms-3 mt-2'>

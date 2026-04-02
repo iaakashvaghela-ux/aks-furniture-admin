@@ -18,18 +18,6 @@ export default function Viewsubsubcategory() {
   const [checked, setChecked] = useState([]);
   const { successToast, errorToast, infoToast } = useAdmin()
 
-  // const users = [
-  //   {
-  //     id: 1,
-  //     name: "Neil Sims",
-  //     order: "1",
-  //     status: "Active",
-  //   },
-
-  // ];
-
-
-
   let getSubSubCategoryData = () => {
     axios.get(`${baseUrl}sub-sub-category/view`)
       .then(res => {
@@ -190,7 +178,7 @@ export default function Viewsubsubcategory() {
                   subSubCategoryData.length > 0 &&
                   checked.length === subSubCategoryData.length
                 } type="checkbox" /></th>
-                <th className="p-4  w-[416px]">Sub Sub Category Name</th>
+                <th className="p-4">Sub Sub Category Name</th>
                 <th className="p-4">Parent Category Name</th>
                 <th className="p-4">Sub Category Name</th>
                 <th className="p-4">IMAGE</th>

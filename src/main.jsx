@@ -39,6 +39,7 @@ import Profile from './components/pages/Profile.jsx'
 
 import AdminProvider from './admin context/AdminContext.jsx'
 import { ToastContainer } from 'react-toastify'
+import DetailsProduct from './components/pages/all pages/products/DetailsProduct.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -89,7 +90,9 @@ createRoot(document.getElementById('root')).render(
             </Route>
 
             <Route path='products'>
-              <Route path='add' element={<Addproduct />} />
+              {/* <Route path="details/:id" element={<ProductDetails />} /> */}
+              <Route path='details/:id' element={<DetailsProduct />} />
+              <Route path='add/:id?' element={<Addproduct />} />
               <Route path='view' element={<Viewproduct />} />
             </Route>
 

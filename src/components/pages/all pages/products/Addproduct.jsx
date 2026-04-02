@@ -1,7 +1,21 @@
+import axios from "axios";
+import { useEffect } from "react";
 import { useState } from "react";
 import { FaCloudUploadAlt } from "react-icons/fa";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function Addproduct() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  let baseUrl = import.meta.env.VITE_API_URL
+  const [parentCategories, setParentCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [subSubCategories, setSubSubCategories] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [path, setPath] = useState("")
+  const [colors, setColors] = useState([]);
+  const [product, setProduct] = useState(null);
+  const imgPath = baseUrl.replace("/admin/", "/uploads/product/");
   const [images, setImages] = useState({
     productImage: null,
     backImage: null,
@@ -14,26 +28,73 @@ export default function Addproduct() {
     galleryImage: [],
   });
 
+
   const [formData, setFormData] = useState({
-    Prodct_Name: "",
-    Parent_Category: "",
-    Sub_Category: "",
-    Sub_Sub_Category: "",
-    Meterial: "",
-    Prodcut_Type: "",
-    Rated: "",
-    Selling: "",
-    Upsell: "",
-    Color: "",
-    Actual_Price: "",
-    Sale_Price: "",
-    Stocks: "",
-    Order: "",
-    Description: "",
+    productName: "",
+    parentCategory: "",
+    subCategory: "",
+    subSubCategory: "",
+    material: [],
+    productType: "",
+    isTopRated: "",
+    isBestSelling: "",
+    isUpsell: "",
+    color: [],
+    actualPrice: "",
+    salePrice: "",
+    stocks: "",
+    order: "",
+    description: "",
   });
 
+  // console.log(formData);
   /* ---------- handlers ---------- */
+  const getProduct = async () => {
+    try {
+      const res = await axios.get(`${baseUrl}product/single/${id}`);
+      const data = res.data._data;
+      // setFormData(data);
+      setFormData({
+        productName: data.productName,
+        parentCategory: data.parentCategory._id,
+        subCategory: data.subCategory._id,
+        subSubCategory: data.subSubCategory._id,
+        material: data.material.map((item) => item._id),
+        productType: data.productType,
+        isTopRated: data.isTopRated,
+        isBestSelling: data.isBestSelling,
+        isUpsell: data.isUpsell,
+        color: data.color.map((item) => item._id),
+        actualPrice: data.actualPrice,
+        salePrice: data.salePrice,
+        stocks: data.stocks,
+        order: data.order,
+        description: data.description,
+      });
+      setImages({
+        ...images,
+        productImage: data.productImage,
+        backImage: data.backImage,
+        galleryImage: data.galleryImage,
+      });
+      setPreviews({
+        ...previews,
+        productImage: imgPath + data.productImage,
+        backImage: imgPath + data.backImage,
+        galleryImage: data.galleryImage.map((item) => imgPath + item),
+      });
 
+
+      console.log(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    getProduct();
+  }, [id]);
+  console.log(previews);
   const handleImageChange = (e) => {
     const { name, files, multiple } = e.target;
     if (multiple) {
@@ -76,14 +137,57 @@ export default function Addproduct() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, selectedOptions } = e.target;
+    if (type === "select-multiple") {
+      const selections = Array.from(selectedOptions).map((option) => option.value);
+      setFormData((prev) => ({ ...prev, [name]: selections }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Images 👉", images);
-    console.log("Form Data 👉", formData);
+
+    const formDataAll = new FormData();
+
+    // Append all form fields
+    for (const key in formData) {
+      if (Array.isArray(formData[key])) {
+        formData[key].forEach((val) => formDataAll.append(key, val));
+      } else {
+        formDataAll.append(key, formData[key]);
+      }
+    }
+
+    // Append images
+    if (images.productImage) {
+      formDataAll.append("productImage", images.productImage);
+    }
+    if (images.backImage) {
+      formDataAll.append("backImage", images.backImage);
+    }
+    if (images.galleryImage && images.galleryImage.length > 0) {
+      images.galleryImage.forEach((img) => formDataAll.append("galleryImage", img));
+    }
+
+    // Send request
+    let addOrUpdate = id ? `update/${id}` : 'add'
+    let getOrPost = id ? 'put' : 'post'
+    axios[getOrPost](`${baseUrl}product/${addOrUpdate}`, formDataAll, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+      .then(res => {
+        if (res.data._status) {
+          navigate("/products/view");
+        }
+      })
+      .catch(err => console.log(err));
+
+
+    // console.log("Form Data 👉", formDataAll);
   };
 
   /* ---------- reusable image box ---------- */
@@ -94,9 +198,8 @@ export default function Addproduct() {
       </label>
 
       <div
-        className={`${
-          multiple ? "min-h-[160px] py-4" : "h-[160px]"
-        } border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 relative`}
+        className={`${multiple ? "min-h-[160px] py-4" : "h-[160px]"
+          } border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 relative`}
       >
         {preview && (multiple ? preview.length > 0 : preview) ? (
           multiple && Array.isArray(preview) ? (
@@ -175,6 +278,77 @@ export default function Addproduct() {
     </div>
   );
 
+
+  let getParentCategory = () => {
+    axios.get(`${baseUrl}product/parent`)
+      .then((res) => {
+        setParentCategories(res.data._data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  let getSubCategory = () => {
+    if (!formData.parentCategory) return;
+    axios.get(`${baseUrl}product/sub-category/${formData.parentCategory}`)
+      .then((res) => {
+        setSubCategories(res.data._data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  let subSubCategory = () => {
+    if (!subCategories) return;
+    axios.get(`${baseUrl}product/sub-sub-category/${formData.subCategory}`)
+      .then((res) => {
+        setSubSubCategories(res.data._data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  let getMaterial = () => {
+    axios.get(`${baseUrl}product/material`)
+      .then((res) => {
+        setMaterials(res.data._data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  let getColor = () => {
+    axios.get(`${baseUrl}product/color`)
+      .then((res) => {
+        setColors(res.data._data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  useEffect(() => {
+    getParentCategory()
+    getMaterial()
+    getColor()
+  }, [])
+
+  useEffect(() => {
+    if (formData.parentCategory) {
+      getSubCategory()
+    }
+  }, [formData.parentCategory])
+
+  useEffect(() => {
+    if (formData.subCategory) {
+      subSubCategory()
+    }
+  }, [formData.subCategory])
+
   return (
     <div className="w-full px-6 py-6">
       <form onSubmit={handleSubmit}>
@@ -218,7 +392,9 @@ export default function Addproduct() {
                 type="text"
                 className=" border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5 px-3"
                 placeholder="Prodct Name"
-                name="Prodct_Name"
+                name="productName"
+                value={formData.productName}
+                onChange={handleChange}
               />
             </div>
 
@@ -227,14 +403,22 @@ export default function Addproduct() {
                 Select Sub Category
               </label>
               <select
-                name="Sub_Category"
+                name="subCategory"
+                value={formData.subCategory}
+                onChange={(e) => {
+                  handleChange(e)
+                  setSubSubCategories([])
+                }}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Select Category</option>
-                <option value="mobile">Mobile Phones</option>
-                <option value="laptop">Laptops</option>
-                <option value="men">Men's Wear</option>
-                <option value="women">Women's Wear</option>
+                {
+                  subCategories?.map((item, index) => {
+                    return (
+                      <option key={index} value={item._id}>{item.name}</option>
+                    )
+                  })
+                }
               </select>
             </div>
 
@@ -243,12 +427,20 @@ export default function Addproduct() {
                 Select Material
               </label>
               <select
-                name="Meterial"
+                name="material"
+                value={formData.material}
+                multiple
+                onChange={handleChange}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
-                <option>Neem</option>
-                <option>Babbul</option>
+                {
+                  materials?.map((item, index) => {
+                    return (
+                      <option key={index} value={item._id}>{item.name}</option>
+                    )
+                  })
+                }
               </select>
             </div>
 
@@ -257,7 +449,8 @@ export default function Addproduct() {
                 Select Product Type
               </label>
               <select
-                name="Prodcut_Type"
+                name="productType"
+                onChange={handleChange}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
@@ -272,7 +465,9 @@ export default function Addproduct() {
                 Is Top Rated
               </label>
               <select
-                name="Rated"
+                name="isTopRated"
+                value={formData.isTopRated}
+                onChange={handleChange}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
@@ -287,7 +482,9 @@ export default function Addproduct() {
               </label>
               <input
                 type="text"
-                name="Actual_Price"
+                name="actualPrice"
+                value={formData.actualPrice}
+                onChange={handleChange}
                 placeholder="Actual Price"
                 className=" border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg block w-full py-2.5 px-3"
               />
@@ -298,8 +495,10 @@ export default function Addproduct() {
                 Total In Stocks
               </label>
               <input
-                type="text"
-                name="Stocks"
+                type="number"
+                name="stocks"
+                value={formData.stocks}
+                onChange={handleChange}
                 placeholder="Total In Stocks"
                 className=" border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg block w-full py-2.5 px-3"
               />
@@ -313,14 +512,24 @@ export default function Addproduct() {
                 Select Parent Category
               </label>
               <select
-                name="Parent_Category"
+                name="parentCategory"
+                value={formData.parentCategory}
+                onChange={(e) => {
+                  handleChange(e)
+                  setSubCategories([])
+                  setSubSubCategories([])
+
+                }}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
-                <option value="mobile">Mobile Phones</option>
-                <option value="laptop">Laptops</option>
-                <option value="men">Men's Wear</option>
-                <option value="women">Women's Wear</option>
+                {
+                  parentCategories?.map((item, index) => {
+                    return (
+                      <option key={index} value={item._id}>{item.name}</option>
+                    )
+                  })
+                }
               </select>
             </div>
 
@@ -329,14 +538,21 @@ export default function Addproduct() {
                 Select Sub Sub Category
               </label>
               <select
-                name="Sub_Sub_Category"
+                name="subSubCategory"
+                value={formData.subSubCategory}
+                onChange={(e) => {
+                  handleChange(e)
+                }}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
-                <option value="mobile">Mobile Phones</option>
-                <option value="laptop">Laptops</option>
-                <option value="men">Men's Wear</option>
-                <option value="women">Women's Wear</option>
+                {
+                  subSubCategories?.map((item, index) => {
+                    return (
+                      <option key={index} value={item._id}>{item.name}</option>
+                    )
+                  })
+                }
               </select>
             </div>
 
@@ -345,14 +561,20 @@ export default function Addproduct() {
                 Select Color
               </label>
               <select
-                name="Color"
-                className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
+                name="color"
+                value={formData.color}
+                multiple
+                onChange={handleChange}
+                className=" border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3 "
               >
                 <option value="">Nothing Selected</option>
-                <option>Red</option>
-                <option>Blue</option>
-                <option>Green</option>
-                <option>Gray</option>
+                {
+                  colors?.map((item, index) => {
+                    return (
+                      <option key={index} value={item._id}>{item.colorName}</option>
+                    )
+                  })
+                }
               </select>
             </div>
 
@@ -361,7 +583,9 @@ export default function Addproduct() {
                 Is Best Selling
               </label>
               <select
-                name="Selling"
+                name="isBestSelling"
+                value={formData.isBestSelling}
+                onChange={handleChange}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
@@ -375,7 +599,9 @@ export default function Addproduct() {
                 Is Upsell
               </label>
               <select
-                name="Upsell"
+                name="isUpsell"
+                value={formData.isUpsell}
+                onChange={handleChange}
                 className="  border-2 shadow-sm border-gray-300 rounded-lg block w-full py-2.5 px-3"
               >
                 <option value="">Nothing Selected</option>
@@ -390,7 +616,9 @@ export default function Addproduct() {
               </label>
               <input
                 type="text"
-                name="Sale_Price"
+                name="salePrice"
+                value={formData.salePrice}
+                onChange={handleChange}
                 placeholder="Sale Price"
                 className=" border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg block w-full py-2.5 px-3"
               />
@@ -401,8 +629,10 @@ export default function Addproduct() {
                 Order
               </label>
               <input
-                type="text"
-                name="Order"
+                type="number"
+                name="order"
+                value={formData.order}
+                onChange={handleChange}
                 placeholder="Order"
                 className=" border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg block w-full py-2.5 px-3"
               />
@@ -414,20 +644,20 @@ export default function Addproduct() {
 
 
         {/* description */}
-        {/* <div className="mt-8">
+        <div className="mt-8">
           <label className="block text-md font-medium text-[#76838f] mb-2">
             Description
           </label>
           <textarea
-            name="Description"
-            value={formData.Description}
+            name="description"
+            value={formData.description}
             onChange={handleChange}
             className="w-full h-[200px] border-2 rounded-lg p-3"
           />
-        </div> */}
+        </div>
 
 
-        
+
 
         <button
           type="submit"
